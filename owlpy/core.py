@@ -43,32 +43,46 @@ def calculateDistanceProfile(Q, T, QT, mean_Q, std_Q, MT, ET):
         D.append(di)
         
     return D
-    
-    
-# MUEEN’S ALGORITHM FOR SIMILARITY SEARCH (MASS)
-def mass(Q, T):
+
+# The code below takes O(m) for each subsequence
+# you should replace it for MASS
+def computeMeanStd(Q, T):
     n = len(T)
     m = len(Q)
     
-    QT = slidingDotProduct(Q, T)
-    
     mean_Q = numpy.mean(Q)
     std_Q = numpy.std(Q)
-    MT = []
-    ET = []
+    MT = [numpy.mean(T[range(i, i + m)]) for i in range(0, n - m)]
+    ET = [numpy.std(T[range(i, i + m)]) for i in range(0, n - m)]
     
-    # The code below takes O(m) for each subsequence
-    # you should replace it for MASS
-    [MT.append(numpy.mean(T[range(i, i + m)])) for i in range(0, n - m)]
-    [ET.append(numpy.std(T[range(i, i + m)])) for i in range(0, n - m)]
+    return mean_Q, std_Q, MT, ET
     
+# MUEEN’S ALGORITHM FOR SIMILARITY SEARCH (MASS)
+def mass(Q, T):
+    QT = slidingDotProduct(Q, T)
+    mean_Q, std_Q, MT, ET = computeMeanStd(Q, T)
     D = calculateDistanceProfile(Q, T, QT, mean_Q, std_Q, MT, ET)
     
     return D
     
+def elementWiseMin(Pab, Iab, D, idx):
+    for i in range(0, len(D)):
+        if(numpy.min(D[i], Pab[i]) == D[i]):
+            Pab[i] = D[i]
+            Iab[i] = idx
+            
+    return Pab, Iab
+    
+    
+
 def stamp(Ta, Tb, m):
     nb = len(Tb)
-    Pab = 0
+    Pab = [float('Inf') for i in range(0, nb - m)]
+    Iab = [0 for i in range(0, nb - m)]
+    idxes = range(0, nb - m)
     
-    
-    
+    for idx in idxes:
+        D = mass(Tb[range(idx, idx + m)], Ta)
+        Pab, Iab = elementWiseMin(Pab, Iab, D, idx)
+        
+    return Pab, Iab
