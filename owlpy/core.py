@@ -38,10 +38,12 @@ def calculateDistanceProfile(QT, Q, T, sumT, sumT2, sumQ, sumQ2, meanT, meanT_2,
 
     # computing the distances -- O(n) time.
     a = [(sumT2[i] - 2*sumT[i]*meanT[i] + m*meanT_2[i])/sigmaT2[i] for i in range(0, n - m)]
-    b = [2*(QT[i + m] - sumQ[i]*meanT[i])/sigmaT[i] for i in range(0, n - m)]
+    b = [2*(QT[i] - sumQ*meanT[i])/sigmaT[i] for i in range(0, n - m)]
     c = sumQ2
     
-    D = [a[i] + b[i] + c[i] for i in range(0, n - m)]
+    dist = [a[i] + b[i] + c for i in range(0, n - m)]
+    
+    D = np.absolute(np.sqrt(dist)) 
         
     return D
 
@@ -60,10 +62,10 @@ def computeMeanStd(Q, T):
     cum_sumT2 = np.cumsum(np.power(T, 2), dtype=float)
     sumT2 = [cum_sumT2[i + m] - cum_sumT2[i] for i in range(0, n - m)]
     sumT = [cum_sumT[i + m] - cum_sumT[i] for i in range(0, n - m)]
-    meanT = [sumT[i]/m for i in range(0, n)]
-    meanT2 = [sumT2[i]/m for i in range(0, n)]
+    meanT = [sumT[i]/m for i in range(0, n - m)]
+    meanT2 = [sumT2[i]/m for i in range(0, n - m)]
     meanT_2 = np.power(meanT, 2)
-    sigmaT2 = [meanT2[i] - meanT_2[i] for i in range(0,n)]
+    sigmaT2 = [meanT2[i] - meanT_2[i] for i in range(0,n - m)]
     sigmaT = np.sqrt(sigmaT2)
     
     return sumT, sumT2, sumQ, sumQ2, meanT, meanT_2, sigmaT, sigmaT2
