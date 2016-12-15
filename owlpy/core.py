@@ -32,18 +32,16 @@ def slidingDotProduct(Q, T):
     
     return QT[m:n]
     
-def calculateDistanceProfile(Q, T, QT, mean_Q, std_Q, MT, ET):
+def calculateDistanceProfile(QT, Q, T, sumT, sumT2, sumQ, sumQ2, meanT, meanT_2, sigmaT, sigmaT2):
     n = len(T)
     m = len(Q)
-    D = []
+
+    # computing the distances -- O(n) time.
+    a = [(sumT2[i] - 2*sumT[i]*meanT[i] + m*meanT_2[i])/sigmaT2[i] for i in range(0, n - m)]
+    b = [2*(QT[i + m] - sumQ[i]*meanT[i])/sigmaT[i] for i in range(0, n - m)]
+    c = sumQ2
     
-    for i in range(0, n - m):
-        a = QT[i] - m*mean_Q*MT[i]
-        b = m*std_Q*ET[i]
-        c = a/b
-        
-        di = np.sqrt(2*m*(1 - c))
-        D.append(di)
+    D = [a[i] + b[i] + c[i] for i in range(0, n - m)]
         
     return D
 
@@ -52,19 +50,29 @@ def calculateDistanceProfile(Q, T, QT, mean_Q, std_Q, MT, ET):
 def computeMeanStd(Q, T):
     n = len(T)
     m = len(Q)
+
+    # Compute Q stats -- O(n)
+    sumQ = np.sum(Q)
+    sumQ2 = np.sum(np.power(Q, 2))
+
+    # Compute T stats -- O(n)
+    cum_sumT = np.cumsum(T, dtype=float)
+    cum_sumT2 = np.cumsum(np.power(T, 2), dtype=float)
+    sumT2 = [cum_sumT2[i + m] - cum_sumT2[i] for i in range(0, n - m)]
+    sumT = [cum_sumT[i + m] - cum_sumT[i] for i in range(0, n - m)]
+    meanT = [sumT[i]/m for i in range(0, n)]
+    meanT2 = [sumT2[i]/m for i in range(0, n)]
+    meanT_2 = np.power(meanT, 2)
+    sigmaT2 = [meanT2[i] - meanT_2[i] for i in range(0,n)]
+    sigmaT = np.sqrt(sigmaT2)
     
-    mean_Q = np.mean(Q)
-    std_Q = np.std(Q)
-    MT = [np.mean(T[i : i + m]) for i in range(0, n - m)]
-    ET = [np.std(T[i : i + m]) for i in range(0, n - m)]
-    
-    return mean_Q, std_Q, MT, ET
+    return sumT, sumT2, sumQ, sumQ2, meanT, meanT_2, sigmaT, sigmaT2
     
 # MUEEN’S ALGORITHM FOR SIMILARITY SEARCH (MASS)
 def mass(Q, T):
     QT = slidingDotProduct(Q, T)
-    mean_Q, std_Q, MT, ET = computeMeanStd(Q, T)
-    D = calculateDistanceProfile(Q, T, QT, mean_Q, std_Q, MT, ET)
+    sumT, sumT2, sumQ, sumQ2, meanT, meanT_2, sigmaT, sigmaT2 = computeMeanStd(Q, T)
+    D = calculateDistanceProfile(QT, Q, T, sumT, sumT2, sumQ, sumQ2, meanT, meanT_2, sigmaT, sigmaT2)
     
     return D
     
